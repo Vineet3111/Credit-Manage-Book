@@ -15,6 +15,13 @@ final class CreditItem {
 
     var credit: Credit?
 
+    init(productName: String, quantity: Decimal, unit: ProductUnit, pricePerUnit: Decimal) {
+        self.productName = productName
+        self.quantity = quantity
+        self.unit = unit
+        self.pricePerUnit = pricePerUnit
+    }
+
     /// Copies the product's name, unit and price so later product edits never change this item.
     init(product: Product, quantity: Decimal) {
         self.productName = product.name

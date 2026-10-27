@@ -39,11 +39,3 @@ struct AppButton: View {
         .disabled(isDisabled)
     }
 }
-
-#Preview {
-    VStack {
-        AppButton(title: "Add Item", systemImage: "plus", style: .outlined) {}
-        AppButton(title: "Save") {}
-    }
-    .padding()
-}

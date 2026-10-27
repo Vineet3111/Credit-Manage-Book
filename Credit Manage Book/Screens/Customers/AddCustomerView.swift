@@ -27,7 +27,7 @@ struct AddCustomerView: View {
                 .padding()
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color("BackgroundSc"))
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .bottom) {
             if viewModel.showToast {

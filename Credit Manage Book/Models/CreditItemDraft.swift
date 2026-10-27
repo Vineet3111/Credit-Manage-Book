@@ -13,10 +13,9 @@ struct CreditItemDraft: Identifiable {
     var price: Decimal = 0
     var quantity = ""
 
-    var totalAmount: Decimal {
-        let quantityValue = Decimal(string: quantity, locale: .current) ?? 0
-        return (price * quantityValue).roundedToPaise
-    }
+    var quantityValue: Decimal { Decimal(string: quantity, locale: .current) ?? 0 }
+
+    var totalAmount: Decimal { (price * quantityValue).roundedToPaise }
 
     var isValid: Bool {
         !productName.isEmpty && totalAmount > 0

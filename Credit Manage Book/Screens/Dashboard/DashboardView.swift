@@ -21,7 +21,7 @@ struct DashboardView: View {
                     customerList
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color("BackgroundSc"))
             
             .navigationDestination(for: DashboardRoute.self) { route in
                 switch route {

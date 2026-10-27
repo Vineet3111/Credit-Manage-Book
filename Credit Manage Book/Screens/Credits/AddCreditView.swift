@@ -34,16 +34,23 @@ struct AddCreditView: View {
                     grandTotalRow
                     AppButton(title: "Add Item", systemImage: "plus", style: .outlined, action: viewModel.addItem)
                     AppButton(title: "Continue to Summary", isDisabled: !viewModel.canContinue) {
-                        // Summary step comes next.
+                        viewModel.showSummary = true
                     }
                 }
                 .padding()
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color("BackgroundSc"))
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $viewModel.showCustomerSheet) { customerSheet }
         .sheet(isPresented: $viewModel.showProductSheet) { productSheet }
+        .navigationDestination(isPresented: $viewModel.showSummary) { SummaryView(viewModel: viewModel) }
+        .overlay(alignment: .bottom) {
+            if viewModel.showToast {
+                ToastView(message: "Credit saved", isPresented: $viewModel.showToast)
+            }
+        }
+        .animation(.easeInOut, value: viewModel.showToast)
     }
 
     // MARK: - Subviews

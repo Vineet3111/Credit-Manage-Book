@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import SwiftData
 
 final class AddCreditViewModel: ObservableObject {
     @Published var selectedCustomer: Customer?
@@ -13,6 +14,10 @@ final class AddCreditViewModel: ObservableObject {
     @Published var items = [CreditItemDraft()]
     @Published var showProductSheet = false
     @Published var productSearchText = ""
+    @Published var showSummary = false
+    @Published var showToast = false
+    @Published var errorMessage: String?
+    @Published var paidAmount = ""
     private var editingItemID: UUID?
 
     init(customer: Customer?) {
@@ -21,6 +26,19 @@ final class AddCreditViewModel: ObservableObject {
 
     var grandTotal: Decimal {
         items.reduce(0) { $0 + $1.totalAmount }.roundedToPaise
+    }
+
+    var paidValue: Decimal {
+        (Decimal(string: paidAmount.trimmingCharacters(in: .whitespaces), locale: .current) ?? 0).roundedToPaise
+    }
+
+    var remainingAmount: Decimal {
+        (grandTotal - paidValue).roundedToPaise
+    }
+
+    /// The paid amount may be empty (nothing paid) but cannot be more than the grand total.
+    var isPaidAmountValid: Bool {
+        paidValue <= grandTotal
     }
 
     var canContinue: Bool {
@@ -67,5 +85,29 @@ final class AddCreditViewModel: ObservableObject {
         }
         showProductSheet = false
         productSearchText = ""
+    }
+
+    /// Saves the credit with its items, clears the form, goes back to it and shows the toast.
+    func saveCredit(in context: ModelContext) {
+        guard let customer = selectedCustomer else { return }
+        let credit = Credit(customer: customer)
+        credit.items = items.map {
+            CreditItem(productName: $0.productName, quantity: $0.quantityValue, unit: $0.unit, pricePerUnit: $0.price)
+        }
+        context.insert(credit)
+        if paidValue > 0 {
+            context.insert(Payment(customer: customer, amount: paidValue, credit: credit))
+        }
+        do {
+            try context.save()
+            errorMessage = nil
+            selectedCustomer = nil
+            items = [CreditItemDraft()]
+            paidAmount = ""
+            showSummary = false
+            showToast = true
+        } catch {
+            errorMessage = "Could not save credit. Please try again."
+        }
     }
 }
