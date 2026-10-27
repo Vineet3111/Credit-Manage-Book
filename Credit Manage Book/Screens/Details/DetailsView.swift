@@ -88,29 +88,87 @@ struct DetailsView: View {
     }
 
     private func creditsSheet(for customer: Customer) -> some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    CustomImage(name: customer.name)
-                    VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: 0) {
+            // Header with customer info
+            VStack(spacing: 16) {
+                // Drag indicator area
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.secondary.opacity(0.3))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 8)
+                
+                // Customer header card
+                HStack(spacing: 14) {
+                    CustomImage(name: customer.name, size: 56)
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(customer.name)
-                            .font(.headline)
+                            .font(.title3.bold())
+                        Text(customer.phone)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                         Text(customer.address)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
                 }
-                .padding(.bottom, 4)
-                paymentCard(for: customer)
-                ForEach(viewModel.sortedCredits(for: customer)) { credit in
-                    creditCard(credit)
+                .padding(.horizontal, 20)
+                
+                // Summary stats
+                HStack(spacing: 12) {
+                    summaryStatBox(
+                        title: "Total Credit",
+                        amount: customer.totalCredit,
+                        icon: "cart.fill",
+                        color: .blue
+                    )
+                    summaryStatBox(
+                        title: "Paid",
+                        amount: customer.totalPaid,
+                        icon: "checkmark.circle.fill",
+                        color: .green
+                    )
+                    summaryStatBox(
+                        title: "Balance",
+                        amount: customer.outstanding,
+                        icon: customer.outstanding > 0 ? "clock.fill" : "checkmark.seal.fill",
+                        color: customer.outstanding > 0 ? .red : .green
+                    )
                 }
+                .padding(.horizontal, 20)
             }
-            .padding()
-            .padding(.top, 12)
+            .padding(.bottom, 16)
+            .background(Color(.systemBackground))
+            
+            // Scrollable content
+            ScrollView {
+                VStack(spacing: 16) {
+                    paymentCard(for: customer)
+                    
+                    // Credits section header
+                    if !viewModel.sortedCredits(for: customer).isEmpty {
+                        HStack {
+                            Text("Credit History")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(customer.credits.count) \(customer.credits.count == 1 ? "transaction" : "transactions")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                    }
+                    
+                    ForEach(viewModel.sortedCredits(for: customer)) { credit in
+                        creditCard(credit)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(Color(.systemGroupedBackground))
         }
-        .scrollDismissesKeyboard(.interactively)
         .background(Color(.systemGroupedBackground))
         .overlay(alignment: .bottom) {
             if viewModel.showToast {
@@ -119,20 +177,65 @@ struct DetailsView: View {
         }
         .animation(.easeInOut, value: viewModel.showToast)
         .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .presentationDragIndicator(.hidden)
+    }
+    
+    private func summaryStatBox(title: String, amount: Decimal, icon: String, color: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+            Text(amount.inrFormatted)
+                .font(.headline)
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func paymentCard(for customer: Customer) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("REMAINING BALANCE")
-                    .font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 16) {
+            // Header with balance
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Make Payment")
+                        .font(.headline)
+                    Text("Current Balance")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
-                Text(customer.outstanding.inrFormatted)
-                    .font(.headline)
-                    .foregroundStyle(customer.outstanding > 0 ? Color.red : Color.green)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(customer.outstanding.inrFormatted)
+                        .font(.title2.bold())
+                        .foregroundStyle(customer.outstanding > 0 ? Color.red : Color.green)
+                    if customer.outstanding > 0 {
+                        Text("Due")
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.red.opacity(0.12), in: Capsule())
+                    } else {
+                        Text("Settled")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.green.opacity(0.12), in: Capsule())
+                    }
+                }
             }
+            
             Divider()
+            
+            // Payment input
             AppTextField(
                 title: "PAID AMOUNT",
                 placeholder: "Enter amount paid by customer",
@@ -140,59 +243,149 @@ struct DetailsView: View {
                 fieldBackground: Color(.systemGroupedBackground)
             )
             .keyboardType(.decimalPad)
+            
             if viewModel.isPaymentTooHigh {
-                Text("Paid amount cannot be more than the remaining balance.")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                    Text("Paid amount cannot exceed the remaining balance.")
+                        .font(.footnote)
+                }
+                .foregroundStyle(.red)
             }
             if let message = viewModel.errorMessage {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                    Text(message)
+                        .font(.footnote)
+                }
+                .foregroundStyle(.red)
             }
+            
             AppButton(title: "Save Payment", isDisabled: !viewModel.canSavePayment(for: customer)) {
                 viewModel.savePayment(for: customer, in: modelContext)
             }
         }
-        .padding(16)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.indigo.opacity(0.05), Color.purple.opacity(0.03)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 16)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.indigo.opacity(0.1), lineWidth: 1)
+        )
     }
 
     private func creditCard(_ credit: Credit) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(credit.date.formatted(date: .abbreviated, time: .shortened))
-                .font(.subheadline.weight(.semibold))
-            Divider()
-            ForEach(credit.items) { item in
-                itemRow(item)
-            }
-            Divider()
+        VStack(alignment: .leading, spacing: 14) {
+            // Date header with status badge
             HStack {
-                amountColumn(title: "TOTAL", amount: credit.total, color: .primary)
-                amountColumn(title: "PAID", amount: credit.paid, color: .green)
-                amountColumn(
-                    title: "REMAINING",
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.indigo)
+                    Text(credit.date.formatted(date: .abbreviated, time: .shortened))
+                        .font(.subheadline.weight(.semibold))
+                }
+                Spacer()
+                if credit.outstanding > 0 {
+                    Text("Pending")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.12), in: Capsule())
+                } else {
+                    Text("Paid")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.green)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.green.opacity(0.12), in: Capsule())
+                }
+            }
+            
+            Divider()
+            
+            // Items section
+            VStack(spacing: 10) {
+                ForEach(credit.items) { item in
+                    itemRow(item)
+                }
+            }
+            
+            Divider()
+            
+            // Amounts summary with colored background boxes
+            HStack(spacing: 10) {
+                amountBox(title: "TOTAL", amount: credit.total, color: .blue)
+                amountBox(title: "PAID", amount: credit.paid, color: .green)
+                amountBox(
+                    title: "DUE",
                     amount: credit.outstanding,
                     color: credit.outstanding > 0 ? .red : .green
                 )
             }
         }
-        .padding(16)
+        .padding(18)
         .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+    }
+    
+    private func amountBox(title: String, amount: Decimal, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(amount.inrFormatted)
+                .font(.subheadline.bold())
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(color.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func itemRow(_ item: CreditItem) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 12) {
+            // Product icon
+            Image(systemName: "cube.fill")
+                .font(.caption)
+                .foregroundStyle(.indigo.opacity(0.6))
+                .frame(width: 32, height: 32)
+                .background(Color.indigo.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.productName)
                     .font(.subheadline.weight(.medium))
-                Text("\(item.quantity) \(item.unit.title()) × \(item.pricePerUnit.inrFormatted)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text("\(item.quantity)")
+                        .font(.caption)
+                    Text(item.unit.title())
+                        .font(.caption2)
+                    Text("×")
+                        .font(.caption2)
+                    Text(item.pricePerUnit.inrFormatted)
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
             }
+            
             Spacer()
+            
             Text(item.totalPrice.inrFormatted)
-                .font(.subheadline.weight(.semibold))
+                .font(.subheadline.bold())
+                .foregroundStyle(.primary)
         }
+        .padding(10)
+        .background(Color(.systemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
     }
 }
