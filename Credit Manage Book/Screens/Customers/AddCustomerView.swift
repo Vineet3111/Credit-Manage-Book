@@ -56,7 +56,14 @@ struct AddCustomerView: View {
 
     private var fields: some View {
         VStack(spacing: 16) {
-            AppTextField(title: "Name", placeholder: "Enter customer name", text: $viewModel.name)
+            VStack(alignment: .leading, spacing: 4) {
+                AppTextField(title: "Name", placeholder: "Enter customer name", text: $viewModel.name)
+                if let message = viewModel.nameValidationMessage {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                }
+            }
             AppTextField(title: "Phone", placeholder: "Enter 10 digit phone number", text: $viewModel.phone)
                 .keyboardType(.phonePad)
             AppTextField(title: "Address", placeholder: "Enter address", text: $viewModel.address)

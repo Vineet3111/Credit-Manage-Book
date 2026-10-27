@@ -21,7 +21,23 @@ final class AddCustomerViewModel: ObservableObject {
     @Published var customerToDelete: Customer?
 
     var canSave: Bool {
-        !trimmed(name).isEmpty && phone.filter(\.isNumber).count == 10 && !trimmed(address).isEmpty
+        let trimmedName = trimmed(name)
+        let nameLength = trimmedName.count
+        return nameLength >= 2 && nameLength <= 30 && phone.filter(\.isNumber).count == 10 && !trimmed(address).isEmpty
+    }
+    
+    var nameValidationMessage: String? {
+        let trimmedName = trimmed(name)
+        let nameLength = trimmedName.count
+        
+        if trimmedName.isEmpty {
+            return nil // Don't show error when field is empty
+        } else if nameLength < 3 {
+            return "Name must be at least 2 characters"
+        } else if nameLength > 30 {
+            return "Name must be 30 characters or less"
+        }
+        return nil
     }
 
     func save(in context: ModelContext) {
