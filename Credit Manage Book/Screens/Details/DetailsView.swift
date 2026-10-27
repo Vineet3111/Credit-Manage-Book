@@ -18,10 +18,7 @@ struct DetailsView: View {
             ScrollView {
                 LazyVStack(spacing: 12) {
                     if customers.isEmpty {
-                        Text("No credits yet.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 24)
+                        emptyState
                     }
                     ForEach(customers) { customer in
                         Button { viewModel.select(customer) } label: {
@@ -40,51 +37,120 @@ struct DetailsView: View {
     }
 
     // MARK: - Subviews
-
-    private func customerCard(_ customer: Customer) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                CustomImage(name: customer.name)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(customer.name)
-                        .font(.headline)
-                    Text(customer.phone)
-                        .font(.subheadline)
-                    Text(customer.address)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text(customer.credits.count == 1 ? "1 credit" : "\(customer.credits.count) credits")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.indigo)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.indigo.opacity(0.12), in: Capsule())
-            }
-            Divider()
-            HStack {
-                amountColumn(title: "TOTAL", amount: customer.totalCredit, color: .primary)
-                amountColumn(title: "PAID", amount: customer.totalPaid, color: .green)
-                amountColumn(title: "REMAINING",amount: customer.outstanding,color: customer.outstanding > 0   ?.red : .green)
-            }
+    
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundStyle(.secondary.opacity(0.5))
+            
+            Text("No Credit Records Yet")
+                .font(.title3.bold())
+            
+            Text("Credits will appear here once you\nadd them for your customers")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
-        .padding(16)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .padding(.top, 60)
     }
 
-    private func amountColumn(title: String, amount: Decimal, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(amount.inrFormatted)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+    private func customerCard(_ customer: Customer) -> some View {
+        HStack(spacing: 0) {
+            // Status accent bar
+            RoundedRectangle(cornerRadius: 0)
+                .fill(customer.outstanding > 0 ? Color.red : Color.green)
+                .frame(width: 5)
+            
+            // Main content
+            HStack(spacing: 14) {
+                CustomImage(name: customer.name, size: 52)
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    // Name and badge
+                    HStack(spacing: 8) {
+                        Text(customer.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        
+                        Text("\(customer.credits.count)")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.indigo)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.indigo.opacity(0.12), in: Capsule())
+                    }
+                    
+                    // Phone and address
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(customer.phone)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(customer.address)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                
+                Spacer()
+                
+                // Outstanding amount with arrow
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(customer.outstanding.inrFormatted)
+                        .font(.headline.bold())
+                        .foregroundStyle(customer.outstanding > 0 ? Color.red : Color.green)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    
+                    HStack(spacing: 4) {
+                        if customer.outstanding > 0 {
+                            Image(systemName: "clock.fill")
+                                .font(.caption2)
+                            Text("Due")
+                                .font(.caption2.weight(.medium))
+                        } else {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption2)
+                            Text("Paid")
+                                .font(.caption2.weight(.medium))
+                        }
+                    }
+                    .foregroundStyle(customer.outstanding > 0 ? Color.red : Color.green)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        (customer.outstanding > 0 ? Color.red : Color.green).opacity(0.12),
+                        in: Capsule()
+                    )
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary.opacity(0.5))
+                        .padding(.top, 2)
+                }
+            }
+            .padding(.vertical, 14)
+            .padding(.leading, 12)
+            .padding(.trailing, 14)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack {
+                Color(.systemBackground)
+                
+                // Subtle gradient overlay based on status
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        (customer.outstanding > 0 ? Color.red : Color.green).opacity(0.02),
+                        Color.clear
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
     }
 
     private func creditsSheet(for customer: Customer) -> some View {

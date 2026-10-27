@@ -26,7 +26,7 @@ struct AddCreditView: View {
                         value: viewModel.selectedCustomer?.name ?? "",
                         placeholder: "Select customer"
                     ) {
-                        viewModel.showCustomerSheet = true
+                        viewModel.showCustomerSelection()
                     }
                     ForEach($viewModel.items) { $item in
                         itemCard($item)
@@ -42,16 +42,20 @@ struct AddCreditView: View {
         }
         .background(Color("BackgroundSc"))
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $viewModel.showCustomerSheet) { customerSheet }
-        .sheet(isPresented: $viewModel.showProductSheet) { productSheet }
-        .sheet(isPresented: $viewModel.showAddCustomerSheet) { 
-            NavigationStack {
-                AddCustomerView()
-            }
-        }
-        .sheet(isPresented: $viewModel.showAddProductSheet) { 
-            NavigationStack {
-                AddProductView()
+        .sheet(item: $viewModel.activeSheet) { sheetType in
+            switch sheetType {
+            case .customerSelection:
+                customerSheet
+            case .productSelection:
+                productSheet
+            case .addCustomer:
+                NavigationStack {
+                    AddCustomerView()
+                }
+            case .addProduct:
+                NavigationStack {
+                    AddProductView()
+                }
             }
         }
         .navigationDestination(isPresented: $viewModel.showSummary) { SummaryView(viewModel: viewModel) }

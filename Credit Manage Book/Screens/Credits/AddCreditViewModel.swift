@@ -7,19 +7,32 @@ import Foundation
 import Combine
 import SwiftData
 
+enum CreditSheetType: Identifiable {
+    case customerSelection
+    case productSelection
+    case addCustomer
+    case addProduct
+    
+    var id: String {
+        switch self {
+        case .customerSelection: return "customerSelection"
+        case .productSelection: return "productSelection"
+        case .addCustomer: return "addCustomer"
+        case .addProduct: return "addProduct"
+        }
+    }
+}
+
 final class AddCreditViewModel: ObservableObject {
     @Published var selectedCustomer: Customer?
-    @Published var showCustomerSheet = false
+    @Published var activeSheet: CreditSheetType?
     @Published var searchText = ""
     @Published var items = [CreditItemDraft()]
-    @Published var showProductSheet = false
     @Published var productSearchText = ""
     @Published var showSummary = false
     @Published var showToast = false
     @Published var errorMessage: String?
     @Published var paidAmount = ""
-    @Published var showAddCustomerSheet = false
-    @Published var showAddProductSheet = false
     private var editingItemID: UUID?
 
     init(customer: Customer?) {
@@ -61,13 +74,16 @@ final class AddCreditViewModel: ObservableObject {
 
     func select(_ customer: Customer) {
         selectedCustomer = customer
-        showCustomerSheet = false
+        activeSheet = nil
         searchText = ""
     }
     
+    func showCustomerSelection() {
+        activeSheet = .customerSelection
+    }
+    
     func addCustomerTapped() {
-        showCustomerSheet = false
-        showAddCustomerSheet = true
+        activeSheet = .addCustomer
     }
 
     func removeItem(_ item: CreditItemDraft) {
@@ -77,7 +93,7 @@ final class AddCreditViewModel: ObservableObject {
 
     func chooseProduct(for item: CreditItemDraft) {
         editingItemID = item.id
-        showProductSheet = true
+        activeSheet = .productSelection
     }
 
     func filteredProducts(_ products: [Product]) -> [Product] {
@@ -90,13 +106,12 @@ final class AddCreditViewModel: ObservableObject {
         if let index = items.firstIndex(where: { $0.id == editingItemID }) {
             items[index].apply(product)
         }
-        showProductSheet = false
+        activeSheet = nil
         productSearchText = ""
     }
     
     func addProductTapped() {
-        showProductSheet = false
-        showAddProductSheet = true
+        activeSheet = .addProduct
     }
 
     /// Saves the credit with its items, clears the form, goes back to it and shows the toast.
