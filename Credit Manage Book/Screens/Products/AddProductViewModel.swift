@@ -34,6 +34,14 @@ final class AddProductViewModel: ObservableObject {
         guard let parsedPrice else { return }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let isEditing = editingProduct != nil
+        
+        // Check for duplicate product name (case-insensitive) when adding new or changing name
+        if let existing = findExistingProduct(named: trimmedName, in: context),
+           existing !== editingProduct {
+            errorMessage = "A product with this name already exists."
+            return
+        }
+        
         if let product = editingProduct {
             product.name = trimmedName
             product.price = parsedPrice.roundedToPaise
@@ -49,6 +57,13 @@ final class AddProductViewModel: ObservableObject {
         } catch {
             errorMessage = "Could not save product. Please try again."
         }
+    }
+    
+    /// Finds a product with the given name (case-insensitive search).
+    private func findExistingProduct(named name: String, in context: ModelContext) -> Product? {
+        let descriptor = FetchDescriptor<Product>()
+        guard let products = try? context.fetch(descriptor) else { return nil }
+        return products.first { $0.name.lowercased() == name.lowercased() }
     }
 
     /// Fills the form with the product and closes the products sheet.

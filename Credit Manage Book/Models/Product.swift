@@ -8,7 +8,7 @@ import SwiftData
 
 @Model
 final class Product {
-    var name: String
+    @Attribute(.unique) var name: String
     var price: Decimal
     var unit: ProductUnit
     var createdAt: Date
