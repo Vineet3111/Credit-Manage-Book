@@ -169,9 +169,17 @@ struct DetailsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(customer.name)
                             .font(.title3.bold())
-                        Text(customer.phone)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        
+                        // Selectable phone number
+                        HStack(spacing: 6) {
+                            Image(systemName: "phone.fill")
+                                .font(.caption)
+                            Text(customer.phone)
+                                .font(.subheadline)
+                                .textSelection(.enabled)
+                        }
+                        .foregroundStyle(.secondary)
+                        
                         Text(customer.address)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -238,7 +246,7 @@ struct DetailsView: View {
         .background(Color(.systemGroupedBackground))
         .overlay(alignment: .bottom) {
             if viewModel.showToast {
-                ToastView(message: "Payment saved", isPresented: $viewModel.showToast)
+                ToastView(message: viewModel.toastMessage, isPresented: $viewModel.showToast)
             }
         }
         .animation(.easeInOut, value: viewModel.showToast)

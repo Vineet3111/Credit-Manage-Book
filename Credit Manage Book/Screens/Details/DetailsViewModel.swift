@@ -13,6 +13,7 @@ final class DetailsViewModel: ObservableObject {
     @Published var paymentAmount = ""
     @Published var errorMessage: String?
     @Published var showToast = false
+    @Published var toastMessage = "Payment saved"
 
     var paymentValue: Decimal {
         (Decimal(string: paymentAmount.trimmingCharacters(in: .whitespaces), locale: .current) ?? 0).roundedToPaise
@@ -54,6 +55,7 @@ final class DetailsViewModel: ObservableObject {
             try context.save()
             errorMessage = nil
             paymentAmount = ""
+            toastMessage = "Payment saved"
             showToast = true
         } catch {
             errorMessage = "Could not save payment. Please try again."
