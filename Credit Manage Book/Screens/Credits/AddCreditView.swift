@@ -44,6 +44,16 @@ struct AddCreditView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $viewModel.showCustomerSheet) { customerSheet }
         .sheet(isPresented: $viewModel.showProductSheet) { productSheet }
+        .sheet(isPresented: $viewModel.showAddCustomerSheet) { 
+            NavigationStack {
+                AddCustomerView()
+            }
+        }
+        .sheet(isPresented: $viewModel.showAddProductSheet) { 
+            NavigationStack {
+                AddProductView()
+            }
+        }
         .navigationDestination(isPresented: $viewModel.showSummary) { SummaryView(viewModel: viewModel) }
         .overlay(alignment: .bottom) {
             if viewModel.showToast {
@@ -125,16 +135,36 @@ struct AddCreditView: View {
                 LazyVStack(spacing: 10) {
                     let results = viewModel.filteredCustomers(customers)
                     if results.isEmpty {
-                        Text("No customers found.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 24)
+                        VStack(spacing: 12) {
+                            Text("No customers found.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Button {
+                                viewModel.addCustomerTapped()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("Add New Customer")
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundStyle(.indigo)
+                            }
+                        }
+                        .padding(.top, 24)
                     }
                     ForEach(results) { customer in
                         customerRow(customer)
                     }
                 }
             }
+            
+            // Add Customer button at bottom
+            AppButton(
+                title: "Add New Customer",
+                systemImage: "plus.circle.fill",
+                style: .outlined,
+                action: viewModel.addCustomerTapped
+            )
         }
         .padding()
         .padding(.top, 12)
@@ -175,17 +205,36 @@ struct AddCreditView: View {
                 LazyVStack(spacing: 10) {
                     let results = viewModel.filteredProducts(products)
                     if results.isEmpty {
-                        Text("No products found. Add products from the Add Products tab.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 24)
+                        VStack(spacing: 12) {
+                            Text("No products found.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Button {
+                                viewModel.addProductTapped()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("Add New Product")
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundStyle(.indigo)
+                            }
+                        }
+                        .padding(.top, 24)
                     }
                     ForEach(results) { product in
                         productRow(product)
                     }
                 }
             }
+            
+            // Add Product button at bottom
+            AppButton(
+                title: "Add New Product",
+                systemImage: "plus.circle.fill",
+                style: .outlined,
+                action: viewModel.addProductTapped
+            )
         }
         .padding()
         .padding(.top, 12)

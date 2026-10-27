@@ -18,6 +18,8 @@ final class AddCreditViewModel: ObservableObject {
     @Published var showToast = false
     @Published var errorMessage: String?
     @Published var paidAmount = ""
+    @Published var showAddCustomerSheet = false
+    @Published var showAddProductSheet = false
     private var editingItemID: UUID?
 
     init(customer: Customer?) {
@@ -62,6 +64,11 @@ final class AddCreditViewModel: ObservableObject {
         showCustomerSheet = false
         searchText = ""
     }
+    
+    func addCustomerTapped() {
+        showCustomerSheet = false
+        showAddCustomerSheet = true
+    }
 
     func removeItem(_ item: CreditItemDraft) {
         guard items.count > 1 else { return }
@@ -85,6 +92,11 @@ final class AddCreditViewModel: ObservableObject {
         }
         showProductSheet = false
         productSearchText = ""
+    }
+    
+    func addProductTapped() {
+        showProductSheet = false
+        showAddProductSheet = true
     }
 
     /// Saves the credit with its items, clears the form, goes back to it and shows the toast.
