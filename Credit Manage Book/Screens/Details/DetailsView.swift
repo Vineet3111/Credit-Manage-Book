@@ -219,22 +219,84 @@ struct DetailsView: View {
                 VStack(spacing: 16) {
                     paymentCard(for: customer)
                     
-                    // Credits section header
-                    if !viewModel.sortedCredits(for: customer).isEmpty {
-                        HStack {
-                            Text("Credit History")
-                                .font(.headline)
-                            Spacer()
-                            Text("\(customer.credits.count) \(customer.credits.count == 1 ? "transaction" : "transactions")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                    // Credits section header with filter
+                    if !viewModel.sortedCredits(for: customer).isEmpty || viewModel.selectedFilter != .all {
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text("Credit History")
+                                    .font(.headline)
+                                Spacer()
+                                let filteredCount = viewModel.sortedCredits(for: customer).count
+                                let totalCount = customer.credits.count
+                                if viewModel.selectedFilter == .all {
+                                    Text("\(totalCount) \(totalCount == 1 ? "transaction" : "transactions")")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("\(filteredCount) of \(totalCount)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            
+                            // Filter picker
+                            HStack(spacing: 8) {
+                                ForEach(CreditDateFilter.allCases) { filter in
+                                    Button {
+                                        viewModel.selectedFilter = filter
+                                        if filter == .customRange {
+                                            viewModel.showDatePicker = true
+                                        }
+                                    } label: {
+                                        Text(filter.rawValue)
+                                            .font(.caption)
+                                            .fontWeight(viewModel.selectedFilter == filter ? .semibold : .regular)
+                                            .foregroundStyle(viewModel.selectedFilter == filter ? Color.white : Color.primary)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                viewModel.selectedFilter == filter ? Color.indigo : Color(.systemGray6),
+                                                in: Capsule()
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            
+                            // Custom date range picker
+                            if viewModel.selectedFilter == .customRange && viewModel.showDatePicker {
+                                VStack(spacing: 8) {
+                                    DatePicker("From", selection: $viewModel.customStartDate, displayedComponents: .date)
+                                        .datePickerStyle(.compact)
+                                    DatePicker("To", selection: $viewModel.customEndDate, displayedComponents: .date)
+                                        .datePickerStyle(.compact)
+                                }
+                                .padding(12)
+                                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 12))
+                            }
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 4)
                     }
                     
-                    ForEach(viewModel.sortedCredits(for: customer)) { credit in
-                        creditCard(credit)
+                    // Credits list or empty state
+                    let filteredCredits = viewModel.sortedCredits(for: customer)
+                    if filteredCredits.isEmpty && viewModel.selectedFilter != .all {
+                        VStack(spacing: 12) {
+                            Image(systemName: "calendar.badge.exclamationmark")
+                                .font(.system(size: 40))
+                                .foregroundStyle(.secondary.opacity(0.5))
+                            Text("No credits found")
+                                .font(.subheadline.weight(.medium))
+                            Text("Try a different date range")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 32)
+                    } else {
+                        ForEach(filteredCredits) { credit in
+                            creditCard(credit)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
